@@ -1,0 +1,16 @@
+[
+{
+  "modid": "propertools",
+  "name": "ProperTools",
+  "description": "Chooses the proper tool for the task.",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["MazeXD"],
+  "credits": "Idea by Pathaleon",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
