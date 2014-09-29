@@ -1,10 +1,13 @@
 package me.mazexd.propertools.util;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.item.ItemStack;
 
 
+@SideOnly(Side.CLIENT)
 public class ItemProperties {
 
     private boolean canBreak;

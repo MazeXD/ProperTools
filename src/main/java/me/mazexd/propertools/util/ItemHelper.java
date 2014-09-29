@@ -4,6 +4,8 @@ import com.google.common.collect.Multimap;
 
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Optional;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -19,6 +21,7 @@ import tconstruct.library.tools.Weapon;
 import java.util.UUID;
 
 
+@SideOnly(Side.CLIENT)
 public class ItemHelper {
 
     private static final UUID damageAttribute = UUID.fromString("CB3F55D3-645C-4F38-A497-9C13A33DB5CF");

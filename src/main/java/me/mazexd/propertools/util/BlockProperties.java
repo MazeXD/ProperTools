@@ -1,9 +1,12 @@
 package me.mazexd.propertools.util;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.world.World;
 
 
+@SideOnly(Side.CLIENT)
 public class BlockProperties {
 
     private boolean fortune;

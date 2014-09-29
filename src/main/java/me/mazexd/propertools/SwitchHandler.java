@@ -3,6 +3,7 @@ package me.mazexd.propertools;
 import com.google.common.collect.Maps;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.InputEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import cpw.mods.fml.relauncher.Side;
@@ -11,9 +12,11 @@ import me.mazexd.propertools.util.BlockProperties;
 import me.mazexd.propertools.util.ItemProperties;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.EntityClientPlayerMP;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
 import org.lwjgl.input.Keyboard;
@@ -33,8 +36,27 @@ public class SwitchHandler {
 
     private Minecraft minecraft;
 
+    private boolean isActive = true;
+    private boolean hasJoined = false;
+
     private SwitchHandler() {
         minecraft = Minecraft.getMinecraft();
+    }
+
+    @SubscribeEvent
+    public void onKeyBind(InputEvent.KeyInputEvent e) {
+        EntityClientPlayerMP player = Minecraft.getMinecraft().thePlayer;
+
+        if (Minecraft.getMinecraft().currentScreen != null)
+            return;
+
+        if (player == null)
+            return;
+
+        if (ProperTools.toggleBinding.isPressed()) {
+            isActive = !isActive;
+            player.addChatMessage(new ChatComponentText("ProperTools has been " + (isActive ? "activated" : "deactivated")));
+        }
     }
 
     @SubscribeEvent
@@ -43,7 +65,17 @@ public class SwitchHandler {
             return;
 
         WorldClient world = minecraft.theWorld;
-        if (world == null)
+        if (world == null) {
+            hasJoined = false;
+            return;
+        }
+
+        if (!hasJoined) {
+            minecraft.thePlayer.addChatMessage(new ChatComponentText("ProperTools is " + (isActive ? "active" : "inactive")));
+            hasJoined = true;
+        }
+
+        if (!isActive)
             return;
 
         MovingObjectPosition object = minecraft.objectMouseOver;

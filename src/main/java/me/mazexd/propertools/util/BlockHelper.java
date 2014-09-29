@@ -1,5 +1,7 @@
 package me.mazexd.propertools.util;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
@@ -8,8 +10,8 @@ import net.minecraft.world.World;
 import java.util.List;
 
 
+@SideOnly(Side.CLIENT)
 public class BlockHelper {
-
 
     private BlockHelper() {}
 
