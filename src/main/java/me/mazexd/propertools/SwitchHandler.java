@@ -1,23 +1,26 @@
 package me.mazexd.propertools;
 
-import cpw.mods.fml.common.Loader;
-import cpw.mods.fml.common.Optional;
+import com.google.common.collect.Maps;
+
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.ClientTickEvent;
 import cpw.mods.fml.common.gameevent.TickEvent.Phase;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import me.mazexd.propertools.util.BlockProperties;
+import me.mazexd.propertools.util.ItemProperties;
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.MovingObjectPosition.MovingObjectType;
-import net.minecraftforge.common.ForgeHooks;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
-import tconstruct.library.tools.HarvestTool;
-import tconstruct.library.tools.Weapon;
+
+import java.util.Map;
+import java.util.Map.Entry;
 
 @SideOnly(Side.CLIENT)
 public class SwitchHandler {
@@ -29,11 +32,9 @@ public class SwitchHandler {
     }
 
     private Minecraft minecraft;
-    private boolean hasTinkersConstruct;
 
     private SwitchHandler() {
         minecraft = Minecraft.getMinecraft();
-        hasTinkersConstruct = Loader.isModLoaded("TConstruct");
     }
 
     @SubscribeEvent
@@ -41,7 +42,8 @@ public class SwitchHandler {
         if (e.phase == Phase.START)
             return;
 
-        if (minecraft.theWorld == null)
+        WorldClient world = minecraft.theWorld;
+        if (world == null)
             return;
 
         MovingObjectPosition object = minecraft.objectMouseOver;
@@ -50,23 +52,84 @@ public class SwitchHandler {
 
         boolean attackKeyDown = isKeyDown(minecraft.gameSettings.keyBindAttack.getKeyCode());
 
-        if (!attackKeyDown)
+        if (!attackKeyDown || minecraft.currentScreen != null)
             return;
 
-        Block block = minecraft.theWorld.getBlock(object.blockX, object.blockY, object.blockZ);
-        int metadata = minecraft.theWorld.getBlockMetadata(object.blockX, object.blockY, object.blockZ);
+        if (world.getTileEntity(object.blockX, object.blockY, object.blockZ) != null)
+            return;
 
-        int newActive = -1;
+        Block block = world.getBlock(object.blockX, object.blockY, object.blockZ);
+        int metadata = world.getBlockMetadata(object.blockX, object.blockY, object.blockZ);
 
+        Map<Integer, ItemProperties> items = Maps.newTreeMap();
         for (int i = 0; i < InventoryPlayer.getHotbarSize(); ++i) {
             ItemStack item = minecraft.thePlayer.inventory.mainInventory[i];
 
             if (item == null)
                 continue;
 
-            if (canHarvest(block, metadata, item)) {
-                newActive = i;
-                break;
+            ItemProperties itemProps = ItemProperties.fromItem(item, block, metadata);
+            if (itemProps.canBreak()) {
+                items.put(i, itemProps);
+            }
+        }
+
+        if (items.isEmpty())
+            return;
+
+        int newActive = -1;
+
+        BlockProperties blockProps = BlockProperties.fromBlock(world, object.blockX, object.blockY, object.blockZ, block, metadata);
+        System.out.println(blockProps);
+
+        if (blockProps.supportsSilktouch()) {
+            for (Entry<Integer, ItemProperties> entry : items.entrySet()) {
+                ItemProperties item = entry.getValue();
+                if (item.hasSilktouch()) {
+                    if (newActive != -1 && items.get(newActive).getDigSpeed() >= item.getDigSpeed())
+                        continue;
+
+                    newActive = entry.getKey();
+                }
+            }
+        }
+
+        if (blockProps.supportsFortune() && newActive == -1) {
+            for (Entry<Integer, ItemProperties> entry : items.entrySet()) {
+                ItemProperties item = entry.getValue();
+                if (item.hasFortune()) {
+                    if (newActive != -1 && items.get(newActive).getDigSpeed() >= item.getDigSpeed())
+                        continue;
+
+                    newActive = entry.getKey();
+                }
+            }
+        }
+
+        if (newActive == -1) {
+            for (Entry<Integer, ItemProperties> entry : items.entrySet()) {
+                ItemProperties item = entry.getValue();
+
+                if (newActive == -1) {
+                    newActive = entry.getKey();
+                    continue;
+                }
+
+                ItemProperties activeItem = items.get(newActive);
+
+                if (activeItem.hasFortune() || activeItem.hasSilktouch()) {
+                    if (!item.hasFortune() && !item.hasSilktouch()) {
+                        newActive = entry.getKey();
+                        continue;
+                    }
+                } else if (item.hasFortune() || item.hasSilktouch()) {
+                    continue;
+                }
+
+                if (activeItem.getDigSpeed() >= item.getDigSpeed())
+                    continue;
+
+                newActive = entry.getKey();
             }
         }
 
@@ -74,38 +137,6 @@ public class SwitchHandler {
             return;
 
         minecraft.thePlayer.inventory.currentItem = newActive;
-    }
-
-    private boolean canHarvest(Block block, int metadata, ItemStack item) {
-        boolean result = false;
-
-        if (hasTinkersConstruct) {
-            result = checkTinkerTool(block, metadata, item);
-        }
-
-        if (!result) {
-            result = ForgeHooks.isToolEffective(item, block, metadata) || item.func_150997_a(block) > 1.5f;
-        }
-
-        return result;
-    }
-
-    @Optional.Method(modid = "TConstruct")
-    private boolean checkTinkerTool(Block block, int metadata, ItemStack item) {
-        if (item.getItem() instanceof Weapon) {
-            Weapon weapon = (Weapon) item.getItem();
-
-            // TC returns 15.0f for web materials and 1.5f for any other
-            // material. If the weapon is broken it returns 0.1f.
-            return weapon.getDigSpeed(item, block, metadata) > 1.5f;
-        }
-
-        if (!(item.getItem() instanceof HarvestTool)) {
-            return false;
-        }
-
-        HarvestTool tool = (HarvestTool) item.getItem();
-        return tool.isEffective(block, metadata);
     }
 
     private boolean isKeyDown(int keyCode) {

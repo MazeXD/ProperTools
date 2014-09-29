@@ -7,6 +7,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
+// TODO: KeyBinding to toggle on/off
 
 @Mod(modid = "propertools", name = "ProperTools", useMetadata = true)
 @SideOnly(Side.CLIENT)
